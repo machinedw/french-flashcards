@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>French Flash</title>
+<style>
+  :root {
+    --bg: #0e0e12;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --green: #3ddc84;
+    --green-glow: rgba(61,220,132,0.18);
+    --brown: #c47c2b;
+    --brown-glow: rgba(196,124,43,0.18);
+    --accent: #7c6af7;
+    --accent-glow: rgba(124,106,247,0.2);
+    --radius: 20px;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    user-select: none;
+  }
+
+  /* SCREENS */
+  .screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 420px; }
+  .screen.active { display: flex; }
+
+  /* HOME */
+  .home-title {
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .home-headline {
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .home-sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.5;
+  }
+  .home-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 16px 22px;
+    text-align: center;
+  }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 18px 48px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:active { opacity: 0.8; }
+
+  /* ROUND HEADER */
+  .round-header {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .round-label { font-size: 13px; color: var(--text-dim); }
+  .round-num { font-size: 15px; font-weight: 700; color: var(--text); }
+  .round-score { font-size: 13px; color: var(--text-dim); }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    width: 100%;
+    max-width: 420px;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    margin-bottom: 36px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* CARD */
+  .card-wrap {
+    width: 100%;
+    max-width: 420px;
+    perspective: 800px;
+  }
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 40px 28px;
+    text-align: center;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .card.correct {
+    border-color: var(--green);
+    box-shadow: 0 0 30px var(--green-glow);
+  }
+  .card.wrong {
+    border-color: var(--brown);
+    box-shadow: 0 0 30px var(--brown-glow);
+  }
+
+  .card-tense {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .card-english {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .card-answer {
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+    min-height: 28px;
+  }
+  .card-answer.visible { opacity: 1; }
+  .card-answer.wrong-answer { color: var(--brown); }
+
+  /* TIMER WRAP — spacer only, timer is internal */
+  .timer-wrap {
+    margin: 28px 0 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* MIC BUTTON */
+  .mic-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  .mic-btn.listening {
+    animation: pulse 1.2s infinite;
+    background: #f76a6a;
+  }
+  .mic-btn:active { transform: scale(0.93); }
+  .mic-btn svg { width: 32px; height: 32px; fill: white; }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(247,106,106,0.5); }
+    70% { box-shadow: 0 0 0 18px rgba(247,106,106,0); }
+    100% { box-shadow: 0 0 0 0 rgba(247,106,106,0); }
+  }
+
+  .mic-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* RESULT SCREEN */
+  .result-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+  .result-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  .result-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 36px;
+    width: 100%;
+  }
+  .result-stat {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+  .result-stat-num { font-size: 26px; font-weight: 700; }
+  .result-stat-num.green { color: var(--green); }
+  .result-stat-num.brown { color: var(--brown); }
+  .result-stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: none;
+    border-radius: 50px;
+    padding: 16px 36px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+    transition: opacity 0.15s;
+  }
+  .btn-secondary:active { opacity: 0.7; }
+
+  /* COMPLETE */
+  .complete-badge {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #3ddc84);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <p class="home-title">French Flash</p>
+  <h1 class="home-headline">Speak it.<br>Own it.</h1>
+  <p class="home-sub">Past, present, future — the tenses of real conversation. 12 rounds. Voice triggered.</p>
+  <div class="home-stats">
+    <div class="stat-box">
+      <div class="stat-num">50</div>
+      <div class="stat-label">Phrases</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">12</div>
+      <div class="stat-label">Rounds</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Tenses</div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="startGame()">Start Round 1</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div class="round-header">
+    <div>
+      <div class="round-label">Round</div>
+      <div class="round-num" id="round-display">1 / 12</div>
+    </div>
+    <div style="text-align:right">
+      <div class="round-label">Score</div>
+      <div class="round-score" id="score-display">0 correct</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <div class="card-wrap">
+    <div class="card" id="card">
+      <div class="card-tense" id="card-tense"></div>
+      <div class="card-english" id="card-english"></div>
+      <div class="card-answer" id="card-answer"></div>
+    </div>
+  </div>
+
+  <div class="timer-wrap"></div>
+
+  <button class="mic-btn" id="mic-btn" onclick="handleMic()">
+    <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 16.93A8.001 8.001 0 0 1 4 11H2a10 10 0 0 0 9 9.93V23h2v-2.07A10 10 0 0 0 22 11h-2a8 8 0 0 1-7 7.93z"/></svg>
+  </button>
+  <div class="mic-label" id="mic-label">Tap to speak</div>
+</div>
+
+<!-- ROUND RESULT -->
+<div class="screen" id="screen-result">
+  <div class="result-icon" id="result-icon">💪</div>
+  <div class="result-title" id="result-title">Round Complete</div>
+  <div class="result-sub" id="result-sub"></div>
+  <div class="result-stats">
+    <div class="result-stat">
+      <div class="result-stat-num green" id="res-correct">0</div>
+      <div class="result-stat-label">Correct</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-num brown" id="res-wrong">0</div>
+      <div class="result-stat-label">Missed</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-num" id="res-total">0</div>
+      <div class="result-stat-label">Cards</div>
+    </div>
+  </div>
+  <button class="btn-primary" id="next-round-btn" onclick="nextRound()">Next Round</button>
+  <button class="btn-secondary" onclick="goHome()">Exit</button>
+</div>
+
+<!-- COMPLETE -->
+<div class="screen" id="screen-complete">
+  <div class="complete-badge">🏆</div>
+  <div class="result-title">All 12 Rounds Done!</div>
+  <div class="result-sub" id="complete-sub"></div>
+  <div class="result-stats">
+    <div class="result-stat">
+      <div class="result-stat-num green" id="total-correct">0</div>
+      <div class="result-stat-label">Total Correct</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-num brown" id="total-wrong">0</div>
+      <div class="result-stat-label">Total Missed</div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="restartGame()">Play Again</button>
+  <button class="btn-secondary" onclick="goHome()">Home</button>
+</div>
+
+<script>
+// ─── PHRASE DECK ───────────────────────────────────────────────────────────
+const CORE = [
+  { en: "I went there yesterday", fr: "j'y suis allé hier", tense: "Passé Composé" },
+  { en: "She called me", fr: "elle m'a appelé", tense: "Passé Composé" },
+  { en: "We ate at the restaurant", fr: "nous avons mangé au restaurant", tense: "Passé Composé" },
+  { en: "He didn't come", fr: "il n'est pas venu", tense: "Passé Composé" },
+  { en: "I forgot", fr: "j'ai oublié", tense: "Passé Composé" },
+  { en: "They left early", fr: "ils sont partis tôt", tense: "Passé Composé" },
+  { en: "I saw him last week", fr: "je l'ai vu la semaine dernière", tense: "Passé Composé" },
+  { en: "She told me everything", fr: "elle m'a tout dit", tense: "Passé Composé" },
+  { en: "I was sleeping when she called", fr: "je dormais quand elle a appelé", tense: "Imparfait" },
+  { en: "I used to go there every day", fr: "j'y allais tous les jours", tense: "Imparfait" },
+  { en: "We were talking about you", fr: "on parlait de toi", tense: "Imparfait" },
+  { en: "He was always late", fr: "il était toujours en retard", tense: "Imparfait" },
+  { en: "I'm going to call you tomorrow", fr: "je vais t'appeler demain", tense: "Futur" },
+  { en: "We will see", fr: "on verra", tense: "Futur" },
+  { en: "She is going to leave soon", fr: "elle va partir bientôt", tense: "Futur" },
+  { en: "I will be there", fr: "j'y serai", tense: "Futur" },
+  { en: "I was going to go but I forgot", fr: "j'allais y aller mais j'ai oublié", tense: "Mixte" },
+  { en: "I was eating when he arrived", fr: "je mangeais quand il est arrivé", tense: "Mixte" },
+  { en: "I was going to call you but she told me", fr: "j'allais t'appeler mais elle me l'a dit", tense: "Mixte" },
+  { en: "I used to live there but I moved", fr: "j'y habitais mais j'ai déménagé", tense: "Mixte" },
+];
+
+const ROTATION = [
+  { en: "I worked all day", fr: "j'ai travaillé toute la journée", tense: "Passé Composé" },
+  { en: "She didn't say anything", fr: "elle n'a rien dit", tense: "Passé Composé" },
+  { en: "We went to the beach", fr: "nous sommes allés à la plage", tense: "Passé Composé" },
+  { en: "I met someone interesting", fr: "j'ai rencontré quelqu'un d'intéressant", tense: "Passé Composé" },
+  { en: "He called me this morning", fr: "il m'a appelé ce matin", tense: "Passé Composé" },
+  { en: "I didn't sleep well", fr: "je n'ai pas bien dormi", tense: "Passé Composé" },
+  { en: "We finished late", fr: "nous avons fini tard", tense: "Passé Composé" },
+  { en: "I took the wrong road", fr: "j'ai pris la mauvaise route", tense: "Passé Composé" },
+  { en: "She arrived before me", fr: "elle est arrivée avant moi", tense: "Passé Composé" },
+  { en: "I tried but it didn't work", fr: "j'ai essayé mais ça n'a pas marché", tense: "Passé Composé" },
+  { en: "I was thinking about you", fr: "je pensais à toi", tense: "Imparfait" },
+  { en: "She used to work here", fr: "elle travaillait ici", tense: "Imparfait" },
+  { en: "We were waiting for him", fr: "on l'attendait", tense: "Imparfait" },
+  { en: "It was raining all day", fr: "il pleuvait toute la journée", tense: "Imparfait" },
+  { en: "I didn't know", fr: "je ne savais pas", tense: "Imparfait" },
+  { en: "He was watching TV when I arrived", fr: "il regardait la télé quand je suis arrivé", tense: "Imparfait" },
+  { en: "I was going to tell you", fr: "j'allais te le dire", tense: "Imparfait" },
+  { en: "She was always happy", fr: "elle était toujours heureuse", tense: "Imparfait" },
+  { en: "I'm going to try", fr: "je vais essayer", tense: "Futur" },
+  { en: "We are going to see each other soon", fr: "on va se voir bientôt", tense: "Futur" },
+  { en: "She will call you back", fr: "elle va te rappeler", tense: "Futur" },
+  { en: "I will do it later", fr: "je le ferai plus tard", tense: "Futur" },
+  { en: "We will figure it out", fr: "on va s'en sortir", tense: "Futur" },
+  { en: "It's going to be fine", fr: "ça va aller", tense: "Futur" },
+  { en: "I'm going to think about it", fr: "je vais y réfléchir", tense: "Futur" },
+  { en: "He is going to be late", fr: "il va être en retard", tense: "Futur" },
+  { en: "I was going to tell you but I forgot", fr: "j'allais te le dire mais j'ai oublié", tense: "Mixte" },
+  { en: "She used to call me but she stopped", fr: "elle m'appelait mais elle a arrêté", tense: "Mixte" },
+  { en: "I was tired so I went to bed early", fr: "j'étais fatigué donc je me suis couché tôt", tense: "Mixte" },
+  { en: "I didn't know it was going to rain", fr: "je ne savais pas qu'il allait pleuvoir", tense: "Mixte" },
+];
+
+// ─── GAME STATE ─────────────────────────────────────────────────────────────
+let currentRound = 1;
+let currentCardIndex = 0;
+let roundCards = [];
+let roundCorrect = 0;
+let roundWrong = 0;
+let totalCorrect = 0;
+let totalWrong = 0;
+let cardTimer = null;
+let timeLeft = 0;
+let isListening = false;
+let recognition = null;
+let cardLocked = false;
+
+// Round sizes: starts at 10, goes up by 2 each round
+function getRoundSize(round) {
+  return 10 + (round - 1) * 2;
+}
+
+// Timer per card — longer for complex phrases
+function getCardTime(phrase) {
+  const words = phrase.en.split(' ').length;
+  if (words <= 4) return 7;
+  if (words <= 7) return 10;
+  return 13;
+}
+
+function buildRoundDeck(round) {
+  const size = getRoundSize(round);
+  const deck = [];
+
+  // Always include all core phrases, shuffled
+  const shuffledCore = [...CORE].sort(() => Math.random() - 0.5);
+
+  // Pick rotation phrases to fill the rest
+  const shuffledRotation = [...ROTATION].sort(() => Math.random() - 0.5);
+
+  // Fill deck: core first, then rotation, loop if needed
+  const pool = [...shuffledCore, ...shuffledRotation];
+  while (deck.length < size) {
+    deck.push(pool[deck.length % pool.length]);
+  }
+
+  return deck.sort(() => Math.random() - 0.5);
+}
+
+// ─── SCREENS ────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { showScreen('screen-home'); }
+
+// ─── GAME FLOW ───────────────────────────────────────────────────────────────
+function startGame() {
+  currentRound = 1;
+  totalCorrect = 0;
+  totalWrong = 0;
+  startRound();
+}
+
+function restartGame() {
+  startGame();
+}
+
+function startRound() {
+  roundCards = buildRoundDeck(currentRound);
+  currentCardIndex = 0;
+  roundCorrect = 0;
+  roundWrong = 0;
+  document.getElementById('round-display').textContent = `${currentRound} / 12`;
+  document.getElementById('score-display').textContent = '0 correct';
+  updateProgress();
+  showScreen('screen-game');
+  showCard();
+}
+
+function showCard() {
+  if (currentCardIndex >= roundCards.length) {
+    endRound();
+    return;
+  }
+
+  cardLocked = false;
+  const card = roundCards[currentCardIndex];
+  const el = document.getElementById('card');
+  el.className = 'card';
+
+  document.getElementById('card-tense').textContent = card.tense;
+  document.getElementById('card-english').textContent = card.en;
+  const answerEl = document.getElementById('card-answer');
+  answerEl.textContent = '';
+  answerEl.className = 'card-answer';
+
+  document.getElementById('mic-btn').className = 'mic-btn';
+  document.getElementById('mic-label').textContent = 'Tap to speak';
+
+  startCardTimer(card);
+}
+
+function startCardTimer(card) {
+  clearInterval(cardTimer);
+  timeLeft = getCardTime(card);
+  const total = timeLeft;
+  const circumference = 201;
+
+  updateTimerDisplay(timeLeft, total, circumference);
+
+  cardTimer = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay(timeLeft, total, circumference);
+    if (timeLeft <= 0) {
+      clearInterval(cardTimer);
+      if (!cardLocked) handleTimeout();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(time, total, circumference) {
+  // Timer is internal — no visual display
+}
+
+function updateProgress() {
+  const size = getRoundSize(currentRound);
+  const pct = (currentCardIndex / size) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// ─── FRENCH VOICE SYNTHESIS ─────────────────────────────────────────────────
+function speakFrench(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'fr-FR';
+  utter.rate = 0.88;
+  utter.pitch = 1;
+
+  // Try to find a French voice
+  const voices = window.speechSynthesis.getVoices();
+  const frVoice = voices.find(v => v.lang.startsWith('fr'));
+  if (frVoice) utter.voice = frVoice;
+
+  window.speechSynthesis.speak(utter);
+}
+
+// Load voices early (Safari needs this)
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+// ─── MIC / SPEECH RECOGNITION ───────────────────────────────────────────────
+function handleMic() {
+  if (cardLocked) return;
+  if (isListening) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('mic-label').textContent = 'Use Safari for voice support';
+    return;
+  }
+
+  // Cancel any ongoing speech before listening
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+  try {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
+    recognition.continuous = false;
+
+    isListening = true;
+    document.getElementById('mic-btn').classList.add('listening');
+    document.getElementById('mic-label').textContent = 'Listening...';
+
+    recognition.onresult = (e) => {
+      isListening = false;
+      document.getElementById('mic-btn').classList.remove('listening');
+      const spoken = Array.from(e.results[0])
+        .map(alt => alt.transcript)
+        .join(' ');
+      checkAnswer(spoken);
+    };
+
+    recognition.onerror = (e) => {
+      isListening = false;
+      document.getElementById('mic-btn').classList.remove('listening');
+      if (e.error === 'not-allowed') {
+        document.getElementById('mic-label').textContent = 'Allow microphone in Settings';
+      } else if (e.error === 'no-speech') {
+        document.getElementById('mic-label').textContent = 'No speech detected — try again';
+      } else {
+        document.getElementById('mic-label').textContent = 'Tap to try again';
+      }
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      document.getElementById('mic-btn').classList.remove('listening');
+    };
+
+    recognition.start();
+
+  } catch(err) {
+    isListening = false;
+    document.getElementById('mic-label').textContent = 'Mic error — tap to retry';
+  }
+}
+
+// ─── ANSWER CHECKING ────────────────────────────────────────────────────────
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/['']/g, "'")
+    .replace(/[^a-z0-9\s']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function checkAnswer(spoken) {
+  if (cardLocked) return;
+  clearInterval(cardTimer);
+
+  const card = roundCards[currentCardIndex];
+  const spokenNorm = normalize(spoken);
+  const correctNorm = normalize(card.fr);
+
+  // Flexible matching — check key words overlap
+  const correctWords = correctNorm.split(' ').filter(w => w.length > 2);
+  const spokenWords = spokenNorm.split(' ');
+  const matches = correctWords.filter(w => spokenWords.some(s => s.includes(w) || w.includes(s)));
+  const score = matches.length / correctWords.length;
+
+  const isCorrect = score >= 0.6;
+  resolveCard(isCorrect, card.fr, spoken);
+}
+
+function handleTimeout() {
+  if (cardLocked) return;
+  clearInterval(cardTimer);
+  const card = roundCards[currentCardIndex];
+  resolveCard(false, card.fr, null);
+}
+
+function resolveCard(correct, answer, spoken) {
+  cardLocked = true;
+  isListening = false;
+  if (recognition) try { recognition.stop(); } catch(e) {}
+
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('mic-label').textContent = correct ? '✓ Correct!' : spoken ? `You said: "${spoken}"` : 'Time\'s up';
+
+  const el = document.getElementById('card');
+  const answerEl = document.getElementById('card-answer');
+  answerEl.textContent = answer;
+  answerEl.classList.add('visible');
+
+  if (correct) {
+    el.classList.add('correct');
+    answerEl.classList.remove('wrong-answer');
+    roundCorrect++;
+    totalCorrect++;
+  } else {
+    el.classList.add('wrong');
+    answerEl.classList.add('wrong-answer');
+    roundWrong++;
+    totalWrong++;
+    // Speak the correct French phrase so your ear hears it
+    setTimeout(() => speakFrench(answer), 300);
+  }
+
+  document.getElementById('score-display').textContent = `${roundCorrect} correct`;
+  currentCardIndex++;
+  updateProgress();
+
+  setTimeout(() => {
+    showCard();
+  }, correct ? 1200 : 2000);
+}
+
+// ─── ROUND END ───────────────────────────────────────────────────────────────
+function endRound() {
+  document.getElementById('progress-fill').style.width = '100%';
+  const total = getRoundSize(currentRound);
+  const pct = Math.round((roundCorrect / total) * 100);
+
+  document.getElementById('res-correct').textContent = roundCorrect;
+  document.getElementById('res-wrong').textContent = roundWrong;
+  document.getElementById('res-total').textContent = total;
+
+  let icon = '💪';
+  let title = 'Round Complete';
+  let sub = '';
+
+  if (pct >= 80) {
+    icon = '🔥';
+    title = 'Strong round!';
+    sub = `${pct}% correct. Your French is showing.`;
+  } else if (pct >= 50) {
+    icon = '💪';
+    title = 'Keep going';
+    sub = `${pct}% correct. The repetition is working.`;
+  } else {
+    icon = '📚';
+    title = 'Stay with it';
+    sub = `${pct}% correct. These phrases will come back around.`;
+  }
+
+  document.getElementById('result-icon').textContent = icon;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-sub').textContent = sub;
+
+  const nextBtn = document.getElementById('next-round-btn');
+  if (currentRound >= 12) {
+    nextBtn.textContent = 'See Final Results';
+  } else {
+    nextBtn.textContent = `Start Round ${currentRound + 1}`;
+  }
+
+  showScreen('screen-result');
+}
+
+function nextRound() {
+  if (currentRound >= 12) {
+    showComplete();
+    return;
+  }
+  currentRound++;
+  startRound();
+}
+
+function showComplete() {
+  const grandTotal = (totalCorrect + totalWrong);
+  const pct = grandTotal > 0 ? Math.round((totalCorrect / grandTotal) * 100) : 0;
+  document.getElementById('total-correct').textContent = totalCorrect;
+  document.getElementById('total-wrong').textContent = totalWrong;
+  document.getElementById('complete-sub').textContent = `${pct}% accuracy across all 12 rounds. ${pct >= 75 ? 'Your conversational French is building.' : 'Every round makes the next one easier.'}`;
+  showScreen('screen-complete');
+}
+</script>
+</body>
+</html>
